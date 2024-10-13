@@ -23,7 +23,8 @@
     /* Path Alias */
     "baseUrl": "src",
     "paths": {
-      "@pages/*": ["pages/*"]
+      "@pages/*": ["pages/*"],
+      "@context/*": ["context/*"]
     }
   },
   "include": ["src"]
