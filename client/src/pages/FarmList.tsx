@@ -91,10 +91,7 @@ const FarmListPage = () => {
   return (
     <div>
       {Object.keys(farmList).map((farmKey) => (
-        <button
-          key={farmKey}
-          onClick={() => navigate("/farm", { state: farmKey })}
-        >
+        <button key={farmKey} onClick={() => navigate(`/${farmKey}`)}>
           <h3>{farmKey}</h3>
           <Line data={getChartData(farmList[farmKey])} />
         </button>

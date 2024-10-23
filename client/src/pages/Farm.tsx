@@ -1,20 +1,23 @@
 import { useSocket } from "contexts/socket";
+import { FARM_FACTORS } from "libs/constant/farm";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Farm } from "types/farm";
 
 const FarmPage = () => {
   const [farmData, setFarmData] = useState<Farm>({} as Farm);
-  const [lightHistory, setLightHistory] = useState<number[]>([]);
-  const [humidityHistory, setHumidityHistory] = useState<number[]>([]);
-  const [temperatureHistory, setTemperatureHistory] = useState<number[]>([]);
-  const [soilMoistureHistory, setSoilMoistureHistory] = useState<number[]>([]);
-  const [co2History, setCo2History] = useState<number[]>([]);
-  const [waterLevelHistory, setWaterLevelHistory] = useState<number[]>([]);
+  const [history, setHistory] = useState<Record<string, number[]>>({
+    light: [],
+    humidity: [],
+    temperature: [],
+    soilMoisture: [],
+    co2: [],
+    waterLevel: [],
+  });
   const navigate = useNavigate();
   const socket = useSocket();
-  const { state: farmKey } = useLocation();
+  const { farmKey } = useParams<{ farmKey: string }>();
   const MAX_HISTORY_SIZE = 40;
 
   useEffect(() => {
@@ -26,42 +29,29 @@ const FarmPage = () => {
     socket.on(`farmData:${farmKey}`, (data: Farm) => {
       console.log(`Received farmData for ${farmKey}:`, data); // farmData가 수신되는지 확인
       setFarmData(data);
-      setLightHistory((prev) => {
-        const updated = [...prev, data.light];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-      setHumidityHistory((prev) => {
-        const updated = [...prev, data.humidity];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-      setTemperatureHistory((prev) => {
-        const updated = [...prev, data.temperature];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-      setSoilMoistureHistory((prev) => {
-        const updated = [...prev, data.soilMoisture];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-      setCo2History((prev) => {
-        const updated = [...prev, data.co2];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-      setWaterLevelHistory((prev) => {
-        const updated = [...prev, data.waterLevel];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
+
+      const { light, humidity, temperature, soilMoisture, co2, waterLevel } =
+        data;
+
+      const updateHistory = (key: keyof Farm, value: number) => {
+        setHistory((prev) => {
+          const updated = [...prev[key], value];
+          return {
+            ...prev,
+            [key]:
+              updated.length > MAX_HISTORY_SIZE
+                ? updated.slice(-MAX_HISTORY_SIZE)
+                : updated,
+          };
+        });
+      };
+
+      updateHistory("light", light);
+      updateHistory("humidity", humidity);
+      updateHistory("temperature", temperature);
+      updateHistory("soilMoisture", soilMoisture);
+      updateHistory("co2", co2);
+      updateHistory("waterLevel", waterLevel);
     });
 
     return () => {
@@ -110,16 +100,26 @@ const FarmPage = () => {
     ],
   });
 
+  const chartOptions = {
+    responsive: false,
+  };
+
+  const chartStyle = { width: "100%", height: "auto" };
+
   return (
     <div>
       <Line data={getChartData(farmData)} />
-      <div>
-        <Line data={getChartFactorData("조도", lightHistory)} />
-        <Line data={getChartFactorData("습도", humidityHistory)} />
-        <Line data={getChartFactorData("온도", temperatureHistory)} />
-        <Line data={getChartFactorData("토양수분", soilMoistureHistory)} />
-        <Line data={getChartFactorData("이산화탄소", co2History)} />
-        <Line data={getChartFactorData("수위", waterLevelHistory)} />
+      <div className="grid grid-cols-2 grid-rows-3 gap-5">
+        {FARM_FACTORS.map(({ key, label }) => (
+          <button key={key} onClick={() => navigate(`/${farmKey}/${key}`)}>
+            <Line
+              data={getChartFactorData(label, history[key])}
+              className="p-2 rounded-lg bg-gray-100 shadow-md"
+              options={chartOptions}
+              style={chartStyle}
+            />
+          </button>
+        ))}
       </div>
       <button onClick={() => navigate(-1)}>농장 목록으로 이동</button>
     </div>
