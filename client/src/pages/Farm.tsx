@@ -107,21 +107,38 @@ const FarmPage = () => {
   const chartStyle = { width: "100%", height: "auto" };
 
   return (
-    <div>
-      <Line data={getChartData(farmData)} />
-      <div className="grid grid-cols-2 grid-rows-3 gap-5">
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        {farmKey} 대시보드
+      </h1>
+      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <Line
+          data={getChartData(farmData)}
+          options={{ maintainAspectRatio: false }}
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {FARM_FACTORS.map(({ key, label }) => (
-          <button key={key} onClick={() => navigate(`/${farmKey}/${key}`)}>
+          <button
+            key={key}
+            onClick={() => navigate(`/${farmKey}/${key}`)}
+            className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-300"
+          >
+            <h3 className="text-xl font-semibold mb-4 text-center">{label}</h3>
             <Line
               data={getChartFactorData(label, history[key])}
-              className="p-2 rounded-lg bg-gray-100 shadow-md"
               options={chartOptions}
               style={chartStyle}
             />
           </button>
         ))}
       </div>
-      <button onClick={() => navigate(-1)}>농장 목록으로 이동</button>
+      <button
+        onClick={() => navigate(-1)}
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
+      >
+        농장 목록으로 이동
+      </button>
     </div>
   );
 };

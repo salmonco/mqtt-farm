@@ -13,7 +13,6 @@ const FactorPage = () => {
     factorKey: string;
   }>();
   const MAX_HISTORY_SIZE = 40;
-  console.log(farmKey, factorKey);
 
   useEffect(() => {
     if (!socket) return;
@@ -57,9 +56,22 @@ const FactorPage = () => {
 
   if (!factorKey) return null;
   return (
-    <div>
-      <Line data={getChartFactorData(getLabelByKey(factorKey), history)} />
-      <button onClick={() => navigate(-1)}>농장으로 이동</button>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        {getLabelByKey(factorKey)} 데이터
+      </h1>
+      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <Line
+          data={getChartFactorData(getLabelByKey(factorKey), history)}
+          options={{ maintainAspectRatio: false }}
+        />
+      </div>
+      <button
+        onClick={() => navigate(-1)}
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
+      >
+        농장으로 이동
+      </button>
     </div>
   );
 };

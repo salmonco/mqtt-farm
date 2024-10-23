@@ -89,13 +89,22 @@ const FarmListPage = () => {
   };
 
   return (
-    <div>
-      {Object.keys(farmList).map((farmKey) => (
-        <button key={farmKey} onClick={() => navigate(`/${farmKey}`)}>
-          <h3>{farmKey}</h3>
-          <Line data={getChartData(farmList[farmKey])} />
-        </button>
-      ))}
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">스마트팜 대시보드</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Object.keys(farmList).map((farmKey) => (
+          <button
+            key={farmKey}
+            onClick={() => navigate(`/${farmKey}`)}
+            className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-300"
+          >
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              {farmKey}
+            </h3>
+            <Line data={getChartData(farmList[farmKey])} />
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
