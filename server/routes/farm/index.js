@@ -16,15 +16,15 @@ const generateFarmData = () => {
 };
 
 // 농장 데이터 전송
-const sendFarmData = (socket) => {
+const sendFarmList = (socket) => {
   const intervalId = setInterval(() => {
-    const farmData = {
+    const farmList = {
       farm1: generateFarmData(),
       farm2: generateFarmData(),
       farm3: generateFarmData(),
     };
-    console.log("farmData", farmData);
-    socket.emit("farmData", farmData);
+    console.log("farmList", farmList);
+    socket.emit("farmList", farmList);
   }, 2000);
 
   socket.on("disconnect", () => {
@@ -33,10 +33,10 @@ const sendFarmData = (socket) => {
 };
 
 const eventHandler = (io, socket) => {
-  console.log("farm");
+  console.log("farmList");
 
-  socket.on("enterFarm", () => {
-    sendFarmData(socket);
+  socket.on("enterFarmList", () => {
+    sendFarmList(socket);
   });
 };
 

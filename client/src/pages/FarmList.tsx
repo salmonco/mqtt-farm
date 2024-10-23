@@ -32,23 +32,25 @@ type Farm = {
   waterLevel: number;
 };
 
-type FarmData = {
+type FarmList = {
   [key: string]: Farm;
 };
 
 const FarmListPage = () => {
-  const [farmData, setFarmData] = useState<FarmData>({});
+  const [farmList, setFarmList] = useState<FarmList>({});
   const socket = useSocket();
 
   useEffect(() => {
     if (!socket) return;
-    socket.emit("enterFarm");
-    socket.on("farmData", (data: FarmData) => {
-      console.log(data);
-      setFarmData(data);
+
+    socket.emit("enterFarmList");
+
+    socket.on("farmList", (data: FarmList) => {
+      setFarmList(data);
     });
+
     return () => {
-      socket.off("farmData");
+      socket.off("farmList");
     };
     // 로컬 데이터로 테스트
     // const farmData: FarmData = {
@@ -90,10 +92,10 @@ const FarmListPage = () => {
 
   return (
     <div>
-      {Object.keys(farmData).map((farmKey) => (
+      {Object.keys(farmList).map((farmKey) => (
         <div key={farmKey}>
           <h3>{farmKey}</h3>
-          <Line data={getChartData(farmData[farmKey])} />
+          <Line data={getChartData(farmList[farmKey])} />
         </div>
       ))}
     </div>
