@@ -56,7 +56,7 @@ const FactorPage = () => {
 
   if (!factorKey) return null;
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6 text-center">
         {getLabelByKey(factorKey)} 데이터
       </h1>
