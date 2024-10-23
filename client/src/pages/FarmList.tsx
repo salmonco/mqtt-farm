@@ -36,7 +36,7 @@ type FarmData = {
   [key: string]: Farm;
 };
 
-const FarmPage = () => {
+const FarmListPage = () => {
   const [farmData, setFarmData] = useState<FarmData>({});
   const socket = useSocket();
 
@@ -100,4 +100,4 @@ const FarmPage = () => {
   );
 };
 
-export default FarmPage;
+export default FarmListPage;

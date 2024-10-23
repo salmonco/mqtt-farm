@@ -2,12 +2,12 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
-import FarmPage from "@pages/Farm";
+import FarmListPage from "@pages/FarmList";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <FarmPage />,
+    element: <FarmListPage />,
   },
 ]);
 
