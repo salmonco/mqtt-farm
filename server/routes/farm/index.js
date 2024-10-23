@@ -15,7 +15,7 @@ const generateFarmData = () => {
   };
 };
 
-// 농장 데이터 전송
+// 농장 리스트 데이터 전송
 const sendFarmList = (socket) => {
   const intervalId = setInterval(() => {
     const farmList = {
@@ -27,16 +27,44 @@ const sendFarmList = (socket) => {
     socket.emit("farmList", farmList);
   }, 2000);
 
-  socket.on("disconnect", () => {
+  const clearFarmListInterval = () => {
     clearInterval(intervalId);
-  });
+    console.log(`Stopped sending farmList data`);
+  };
+
+  socket.on("leaveFarmList", clearFarmListInterval);
+  socket.on("disconnect", clearFarmListInterval);
+};
+
+// 개별 농장 데이터 전송
+const sendFarmData = (socket, farmKey) => {
+  const intervalId = setInterval(() => {
+    const farmData = generateFarmData();
+    console.log(`Sending data for ${farmKey}:`, farmData);
+    socket.emit(`farmData:${farmKey}`, farmData);
+  }, 2000);
+
+  const clearFarmInterval = () => {
+    clearInterval(intervalId);
+    console.log(`Stopped sending data for ${farmKey}`);
+  };
+
+  socket.on("unsubscribeFarm", clearFarmInterval);
+  socket.on("disconnect", clearFarmInterval);
 };
 
 const eventHandler = (io, socket) => {
-  console.log("farmList");
-
   socket.on("enterFarmList", () => {
     sendFarmList(socket);
+  });
+
+  socket.on("subscribeFarm", (farmKey) => {
+    console.log(`subscribeFarm event received for ${farmKey}`);
+    sendFarmData(socket, farmKey);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
   });
 };
 

@@ -1,4 +1,4 @@
-import { useSocket } from "@context/socket";
+import { useSocket } from "contexts/socket";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -11,6 +11,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { Farm, FarmList } from "types/farm";
+import { useNavigate } from "react-router-dom";
 
 // Chart.js의 스케일과 플러그인을 등록
 ChartJS.register(
@@ -23,21 +25,9 @@ ChartJS.register(
   Legend
 );
 
-type Farm = {
-  light: number;
-  humidity: number;
-  temperature: number;
-  soilMoisture: number;
-  co2: number;
-  waterLevel: number;
-};
-
-type FarmList = {
-  [key: string]: Farm;
-};
-
 const FarmListPage = () => {
   const [farmList, setFarmList] = useState<FarmList>({});
+  const navigate = useNavigate();
   const socket = useSocket();
 
   useEffect(() => {
@@ -51,6 +41,7 @@ const FarmListPage = () => {
 
     return () => {
       socket.off("farmList");
+      socket.emit("leaveFarmList");
     };
     // 로컬 데이터로 테스트
     // const farmData: FarmData = {
@@ -82,8 +73,15 @@ const FarmListPage = () => {
           backgroundColor: [
             "rgba(75, 192, 192, 0.6)",
             "rgba(153, 102, 255, 0.6)",
+            "rgba(255, 159, 64, 0.6)",
+            "rgba(255, 205, 86, 0.6)",
           ],
-          borderColor: ["rgba(75, 192, 192, 1)", "rgba(153, 102, 255, 1)"],
+          borderColor: [
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+            "rgba(255, 159, 64, 1)",
+            "rgba(255, 205, 86, 1)",
+          ],
           borderWidth: 1,
         },
       ],
@@ -93,10 +91,13 @@ const FarmListPage = () => {
   return (
     <div>
       {Object.keys(farmList).map((farmKey) => (
-        <div key={farmKey}>
+        <button
+          key={farmKey}
+          onClick={() => navigate("/farm", { state: farmKey })}
+        >
           <h3>{farmKey}</h3>
           <Line data={getChartData(farmList[farmKey])} />
-        </div>
+        </button>
       ))}
     </div>
   );
