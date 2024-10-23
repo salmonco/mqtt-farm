@@ -1,16 +1,10 @@
 const express = require("express");
 const cors = require("cors");
+const mqttClient = require("./mqttClient");
 
 const server = () => {
   const app = express();
-  const PORT = process.env.PORT || 5001;
-  const server = require("http").createServer(app);
-  const io = require("socket.io")(server, {
-    cors: {
-      origin: "http://localhost:5173",
-      credentials: true,
-    },
-  });
+  const PORT = process.env.PORT || 5002;
 
   app.use(
     express.urlencoded({
@@ -22,17 +16,27 @@ const server = () => {
 
   //   app.use("/", require("./routes"));
 
-  io.on("connection", (socket) => {
-    console.log("New client connected");
-
-    socket.on("disconnect", () => {
-      console.log("Client disconnected");
-    });
-
-    require("./routes/farm")(io, socket);
+  mqttClient.on("connect", () => {
+    console.log("Connected to MQTT broker");
+    mqttClient.subscribe("enterFarmList");
+    mqttClient.subscribe("subscribeFarm/#");
+    mqttClient.subscribe("subscribeFactor/#");
+    mqttClient.subscribe("leaveFarmList");
+    mqttClient.subscribe("unsubscribeFarm/#");
+    mqttClient.subscribe("unsubscribeFactor/#");
+    mqttClient.subscribe("disconnect");
+    require("./routes/farm")(mqttClient);
   });
 
-  server.listen(PORT, () => {
+  mqttClient.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+
+  mqttClient.on("message", (topic, message) => {
+    console.log(`Received message: ${message.toString()} on topic: ${topic}`);
+  });
+
+  app.listen(PORT, () => {
     console.log("listening on %d", PORT);
   });
 
