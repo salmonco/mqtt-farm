@@ -1,4 +1,4 @@
-import { useSocket } from "contexts/socket";
+import { useMQTT } from "contexts/MQTTContext";
 import { FARM_FACTORS } from "libs/constant/farm";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
@@ -16,49 +16,55 @@ const FarmPage = () => {
     waterLevel: [],
   });
   const navigate = useNavigate();
-  const socket = useSocket();
+  const mqttClient = useMQTT();
   const { farmKey } = useParams<{ farmKey: string }>();
   const MAX_HISTORY_SIZE = 40;
 
   useEffect(() => {
-    if (!socket) return;
+    if (!mqttClient) return;
 
     // 특정 농장에 대한 구독 요청
-    socket.emit("subscribeFarm", farmKey);
+    mqttClient.publish(`subscribeFarm/${farmKey}`, "");
 
-    socket.on(`farmData:${farmKey}`, (data: Farm) => {
-      console.log(`Received farmData for ${farmKey}:`, data); // farmData가 수신되는지 확인
-      setFarmData(data);
+    const handleMessage = (topic: string, message: Buffer) => {
+      if (topic === `farmData/${farmKey}`) {
+        const data: Farm = JSON.parse(message.toString());
+        console.log(`Received farmData for ${farmKey}:`, data); // farmData가 수신되는지 확인
+        setFarmData(data);
 
-      const { light, humidity, temperature, soilMoisture, co2, waterLevel } =
-        data;
+        const { light, humidity, temperature, soilMoisture, co2, waterLevel } =
+          data;
 
-      const updateHistory = (key: keyof Farm, value: number) => {
-        setHistory((prev) => {
-          const updated = [...prev[key], value];
-          return {
-            ...prev,
-            [key]:
-              updated.length > MAX_HISTORY_SIZE
-                ? updated.slice(-MAX_HISTORY_SIZE)
-                : updated,
-          };
-        });
-      };
+        const updateHistory = (key: keyof Farm, value: number) => {
+          setHistory((prev) => {
+            const updated = [...prev[key], value];
+            return {
+              ...prev,
+              [key]:
+                updated.length > MAX_HISTORY_SIZE
+                  ? updated.slice(-MAX_HISTORY_SIZE)
+                  : updated,
+            };
+          });
+        };
 
-      updateHistory("light", light);
-      updateHistory("humidity", humidity);
-      updateHistory("temperature", temperature);
-      updateHistory("soilMoisture", soilMoisture);
-      updateHistory("co2", co2);
-      updateHistory("waterLevel", waterLevel);
-    });
+        updateHistory("light", light);
+        updateHistory("humidity", humidity);
+        updateHistory("temperature", temperature);
+        updateHistory("soilMoisture", soilMoisture);
+        updateHistory("co2", co2);
+        updateHistory("waterLevel", waterLevel);
+      }
+    };
+
+    mqttClient.subscribe(`farmData/${farmKey}`);
+    mqttClient.on("message", handleMessage);
 
     return () => {
-      socket.off(`farmData:${farmKey}`);
-      socket.emit("unsubscribeFarm", farmKey);
+      mqttClient.off("message", handleMessage);
+      mqttClient.publish(`unsubscribeFarm/${farmKey}`, "");
     };
-  }, [socket, farmKey]);
+  }, [mqttClient, farmKey]);
 
   const getChartData = (farm: Farm) => {
     const { light, humidity, temperature, soilMoisture, co2, waterLevel } =

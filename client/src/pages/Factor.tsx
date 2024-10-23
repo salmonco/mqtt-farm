@@ -1,4 +1,4 @@
-import { useSocket } from "contexts/socket";
+import { useMQTT } from "contexts/MQTTContext";
 import { FARM_FACTORS } from "libs/constant/farm";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 const FactorPage = () => {
   const [history, setHistory] = useState<number[]>([]);
   const navigate = useNavigate();
-  const socket = useSocket();
+  const mqttClient = useMQTT();
   const { farmKey, factorKey } = useParams<{
     farmKey: string;
     factorKey: string;
@@ -15,26 +15,32 @@ const FactorPage = () => {
   const MAX_HISTORY_SIZE = 40;
 
   useEffect(() => {
-    if (!socket) return;
+    if (!mqttClient) return;
 
     // 특정 농장의 특정 팩터에 대한 구독 요청
-    socket.emit("subscribeFactor", farmKey, factorKey);
+    mqttClient.publish(`subscribeFactor/${farmKey}/${factorKey}`, "");
 
-    socket.on(`farmData:${farmKey}:${factorKey}`, (data: number) => {
-      console.log(`Received farmData for ${factorKey} in ${farmKey}:`, data); // farmData가 수신되는지 확인
-      setHistory((prev) => {
-        const updated = [...prev, data];
-        return updated.length > MAX_HISTORY_SIZE
-          ? updated.slice(-MAX_HISTORY_SIZE)
-          : updated;
-      });
-    });
+    const handleMessage = (topic: string, message: Buffer) => {
+      if (topic === `farmData/${farmKey}/${factorKey}`) {
+        const data: number = JSON.parse(message.toString());
+        console.log(`Received farmData for ${factorKey} in ${farmKey}:`, data); // farmData가 수신되는지 확인
+        setHistory((prev) => {
+          const updated = [...prev, data];
+          return updated.length > MAX_HISTORY_SIZE
+            ? updated.slice(-MAX_HISTORY_SIZE)
+            : updated;
+        });
+      }
+    };
+
+    mqttClient.subscribe(`farmData/${farmKey}/${factorKey}`);
+    mqttClient.on("message", handleMessage);
 
     return () => {
-      socket.off(`farmData:${farmKey}:${factorKey}`);
-      socket.emit("unsubscribeFactor", farmKey, factorKey);
+      mqttClient.off("message", handleMessage);
+      mqttClient.publish(`unsubscribeFactor/${farmKey}/${factorKey}`, "");
     };
-  }, [socket, farmKey, factorKey]);
+  }, [mqttClient, farmKey, factorKey]);
 
   const getChartFactorData = (label: string, data: number[]) => ({
     labels: Array.from({ length: data.length }, (_, i) => i + 1),

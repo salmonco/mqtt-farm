@@ -1,4 +1,3 @@
-import { useSocket } from "contexts/socket";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -13,6 +12,7 @@ import {
 } from "chart.js";
 import { Farm, FarmList } from "types/farm";
 import { useNavigate } from "react-router-dom";
+import { useMQTT } from "contexts/MQTTContext";
 
 // Chart.js의 스케일과 플러그인을 등록
 ChartJS.register(
@@ -28,38 +28,28 @@ ChartJS.register(
 const FarmListPage = () => {
   const [farmList, setFarmList] = useState<FarmList>({});
   const navigate = useNavigate();
-  const socket = useSocket();
+  const mqttClient = useMQTT();
 
   useEffect(() => {
-    if (!socket) return;
+    if (!mqttClient) return;
 
-    socket.emit("enterFarmList");
+    mqttClient.publish("enterFarmList", "");
 
-    socket.on("farmList", (data: FarmList) => {
-      setFarmList(data);
-    });
+    const handleMessage = (topic: string, message: Buffer) => {
+      if (topic === "farmList") {
+        const data: FarmList = JSON.parse(message.toString());
+        setFarmList(data);
+      }
+    };
+
+    mqttClient.subscribe("farmList");
+    mqttClient.on("message", handleMessage);
 
     return () => {
-      socket.off("farmList");
-      socket.emit("leaveFarmList");
+      mqttClient.off("message", handleMessage);
+      mqttClient.publish("leaveFarmList", "");
     };
-    // 로컬 데이터로 테스트
-    // const farmData: FarmData = {
-    //   farm1: {
-    //     light: 96,
-    //     humidity: 36,
-    //   },
-    //   farm2: {
-    //     light: 27,
-    //     humidity: 51,
-    //   },
-    //   farm3: {
-    //     light: 92,
-    //     humidity: 8,
-    //   },
-    // };
-    // setFarmData(farmData);
-  }, [socket]);
+  }, [mqttClient]);
 
   const getChartData = (farm: Farm) => {
     const { light, humidity, temperature, soilMoisture, co2, waterLevel } =
