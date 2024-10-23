@@ -53,6 +53,23 @@ const sendFarmData = (socket, farmKey) => {
   socket.on("disconnect", clearFarmInterval);
 };
 
+// 개별 농장에 대한 팩터 데이터 전송
+const sendFactorData = (socket, farmKey, factorKey) => {
+  const intervalId = setInterval(() => {
+    const factorData = generateRandomData();
+    console.log(`Sending data for ${factorKey} in ${farmKey}:`, factorData);
+    socket.emit(`farmData:${farmKey}:${factorKey}`, factorData);
+  }, 2000);
+
+  const clearFactorInterval = () => {
+    clearInterval(intervalId);
+    console.log(`Stopped sending data for ${factorKey} in ${farmKey}`);
+  };
+
+  socket.on("unsubscribeFactor", clearFactorInterval);
+  socket.on("disconnect", clearFactorInterval);
+};
+
 const eventHandler = (io, socket) => {
   socket.on("enterFarmList", () => {
     sendFarmList(socket);
@@ -61,6 +78,13 @@ const eventHandler = (io, socket) => {
   socket.on("subscribeFarm", (farmKey) => {
     console.log(`subscribeFarm event received for ${farmKey}`);
     sendFarmData(socket, farmKey);
+  });
+
+  socket.on("subscribeFactor", (farmKey, factorKey) => {
+    console.log(
+      `subscribeFactor event received for ${factorKey} in ${farmKey}`
+    );
+    sendFactorData(socket, farmKey, factorKey);
   });
 
   socket.on("disconnect", () => {
